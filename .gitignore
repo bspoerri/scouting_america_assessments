@@ -4,3 +4,13 @@
 
 
 # --- Generated Output ----
+
+
+
+# --- Python ---
+__pycache__/
+
+
+# --- macOS / editor ---
+.DS_Store
+.vscode/
