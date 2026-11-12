@@ -1,5 +1,5 @@
 # --- Sensitive / Local Data ---
-
+*.env
 
 
 
@@ -12,5 +12,5 @@ __pycache__/
 
 
 # --- macOS / editor ---
-.DS_Store
-.vscode/
+*.DS_Store
+*.vscode/
