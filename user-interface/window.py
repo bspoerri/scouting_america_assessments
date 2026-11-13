@@ -19,7 +19,7 @@ class Window:
         string += f'\n\nEnter "0" to {"exit" if self.home_ind else "return"}'
         return string
 
-    def get_selection(self) -> int:
+    def get_selection(self):
         '''
         Loop until the user enters 0 or a valid option code and return it.
         '''
