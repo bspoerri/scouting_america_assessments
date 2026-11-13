@@ -8,7 +8,7 @@ def add_camp(name: str):
     page_title = name.upper()
     display_support.display_page(page_title)
     # TODO: prompt for camp fields and INSERT INTO camp
-    
+   
 
 def edit_camp(name: str):
     # TODO
@@ -42,6 +42,18 @@ def cancel_assessment(name: str):
     # TODO
     not_implemented(name)
 
+def add_volunteer(name: str):
+    # TODO: prompt for volunteer fields and INSERT INTO volunteer
+    not_implemented(name)
+
+def edit_volunteer(name: str):
+    # TODO
+    not_implemented(name)
+
+def delete_volunteer(name: str):
+    # TODO
+    not_implemented(name)
+
 
 actions = {
     'add camp': add_camp,
@@ -52,7 +64,10 @@ actions = {
     'delete program': delete_program,
     'schedule assessment': schedule_assessment,
     'modify assessment': modify_assessment,
-    'schedule assessment': cancel_assessment,
+    'cancel assessment': cancel_assessment,
+    'add volunteer': add_volunteer,
+    'edit volunteer': edit_volunteer,
+    'delete volunteer': delete_volunteer,
 }
 
 
