@@ -9,6 +9,8 @@ config.py
 
 # --- Python ---
 __pycache__/
+.venv/
+.scout_venv/
 
 
 # --- macOS / editor ---
