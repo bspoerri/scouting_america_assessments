@@ -3,9 +3,10 @@ import display_support
 import pages
 from actions import run_action
 from window import Window
+from db_connection import get_connection
 
 
-def main():
+def main(cnx):
 
     # display greeting on boot-up
     display_support.display_greeting("SCOUT ASSESSMENT MANAGER")
@@ -46,7 +47,12 @@ def main():
 
 
 if __name__ == '__main__':
+    cnx = get_connection()
+    if cnx is None:
+        raise SystemExit(1)
     try:
-        main()
+        main(cnx)
     except (KeyboardInterrupt, EOFError):
         print('\nGoodbye!')
+    finally:
+        cnx.close()
