@@ -7,7 +7,15 @@ from db_connection import get_connection
 
 
 def main(cnx):
+    '''
+    Run the main menu loop. Pages are kept on a stack: selecting a
+    page pushes it, entering 0 pops back, and the program ends
+    when the stack is empty.
 
+    Parameters:
+        cnx (mysql connection object) - open database connection
+            passed to each action
+    '''
     # display greeting on boot-up
     display_support.display_greeting("SCOUT ASSESSMENT MANAGER")
 
@@ -32,7 +40,7 @@ def main(cnx):
         if cmd_code == 0:
             stack.pop()
             continue
-        # 
+        # look up the page or action name for the selected code
         next_page = window.window_options[cmd_code]
 
         # if next page is a window, add it to the stack
@@ -40,7 +48,7 @@ def main(cnx):
             stack.append(next_page)
         # run command, theses are not windows
         else:
-            run_action(next_page)
+            run_action(next_page, cnx)
 
     # display goodbye once runtime condition is no longer met
     display_support.print_chars('Goodbye!')
