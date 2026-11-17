@@ -1,9 +1,14 @@
 # Page structure
 page_dict = {
-    'home': ('manage volunteers', 'camp manager', 'program manager', 'assessment scheduler', 'quick views'),
-    'manage volunteers': ('add volunteer', 'edit volunteer', 'delete volunteer'),
+    'home': ('volunteer manager', 'camp manager', 'program manager',
+             'assessment manager', 'quick views'),
+    'volunteer manager': ('add volunteer', 'edit volunteer',
+                          'delete volunteer'),
     'camp manager': ('add camp', 'edit camp', 'delete camp'),
     'program manager': ('add program', 'edit program', 'delete program'),
-    'assessment scheduler': ('schedule assessment', 'modify assessment', 'cancel assessment'),
+    'assessment manager': ('assessment scheduler', 'assessor assignment'),
+    'assessment scheduler': ('schedule new', 'modify existing',
+                             'cancel existing'),
+    'assessor assignment': ('add assessors', 'remove assessors'),
     'quick views': (),
 }
