@@ -26,8 +26,23 @@ def select_row(cursor, query: str, label: str):
     '''
     # execute query and store results
     cursor.execute(query)
-    rows = cursor.fetchall()
-    # if query returns no options cancel with note to user
+    return select_option(cursor.fetchall(), label)
+
+
+def select_option(rows: list, label: str):
+    '''
+    Show (id, display_name) rows as a numbered list and return the
+    chosen row. Raises Cancelled if the user enters 0 or there are
+    no rows.
+
+    Parameters:
+        rows (list) - (id, display_name) tuples to choose from
+        label (string) - name of the field being selected
+
+    Returns:
+        row (tuple) - (id, display_name)
+    '''
+    # if there are no options cancel with note to user
     if not rows:
         print(f'\nNo {label}s found.')
         raise Cancelled
