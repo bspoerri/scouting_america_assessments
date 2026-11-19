@@ -13,7 +13,6 @@ def get_connection():
     '''
     try:
         # unpack config dict into keyword arguments
-        # (user, password, host, ...)
         return mysql.connector.connect(**DATABASE)
     # report the most common failure causes in plain language
     except mysql.connector.Error as err:

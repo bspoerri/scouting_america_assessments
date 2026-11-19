@@ -26,7 +26,7 @@ def main(cnx):
     while stack:
         # active page is last pushed to stack
         page = stack[-1]
-        # Use Window class to create a window object for currect page
+        # Use Window class to create a window object for current page
         window = Window(
             name=page,
             window_options=pages.page_dict[page],
@@ -46,7 +46,7 @@ def main(cnx):
         # if next page is a window, add it to the stack
         if next_page in pages.page_dict:
             stack.append(next_page)
-        # run command, theses are not windows
+        # run command, these are not windows
         else:
             run_action(next_page, cnx)
 
