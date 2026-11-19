@@ -65,6 +65,33 @@ def display_page(page_text: str, to_upper: bool = False):
     print(page_text)
 
 
+def print_table(headers: list, rows: list):
+    '''
+    Print query results as a text table with columns sized to fit
+    the longest value in each column.
+
+    Parameters:
+        headers (list) - column names
+        rows (list) - tuples of values, one per row
+    '''
+    if not rows:
+        print('\n  No records found.')
+        return
+    # show NULL as blank and everything else as text
+    rows = [['' if val is None else str(val) for val in row]
+            for row in rows]
+    # header labels: "camp_name" -> "Camp Name"
+    headers = [h.replace('_', ' ').title() for h in headers]
+    widths = [max(len(h), *(len(row[i]) for row in rows))
+              for i, h in enumerate(headers)]
+    print()
+    print('  '.join(h.ljust(w) for h, w in zip(headers, widths)))
+    print('  '.join('-' * w for w in widths))
+    for row in rows:
+        print('  '.join(val.ljust(w) for val, w in zip(row, widths)))
+    print(f'\n({len(rows)} row{"" if len(rows) == 1 else "s"})')
+
+
 def pause(message: str = 'Press Enter to continue...'):
     '''
     Wait for the user to press Enter before moving on.

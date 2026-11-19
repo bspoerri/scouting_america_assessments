@@ -1,7 +1,7 @@
 
 ## Usage 
 
-Before running application **create a config.py** folder in user-interface directory.
+Before running application **create a config.py** file in user-interface directory.
 
 Populate connection details as follows:
 
