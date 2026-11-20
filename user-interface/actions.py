@@ -213,7 +213,17 @@ def fill_open_seat(cursor, assessment_id: int):
         'JOIN volunteer v ON v.volunteer_id = aa.volunteer_id '
         'LEFT JOIN experienced_volunteers ev '
         'ON ev.volunteer_id = v.volunteer_id '
+        'JOIN assessment selected ON selected.assessment_id = aa.assessment_id '
         "WHERE aa.assessment_id = %s AND aa.role_code = 'ALTERNATE' "
+        'AND v.active_ind = TRUE '
+        'AND NOT EXISTS ( '
+        '  SELECT 1 FROM assessment_assignment other_aa '
+        '  JOIN assessment other_a '
+        '    ON other_a.assessment_id = other_aa.assessment_id '
+        '  WHERE other_aa.volunteer_id = v.volunteer_id '
+        '    AND other_a.assessment_dt = selected.assessment_dt '
+        '    AND other_a.assessment_id <> selected.assessment_id '
+        ') '
         'ORDER BY aa.assignment_id',
         (assessment_id,)
     )
@@ -792,6 +802,16 @@ def enter_assignments(name: str, cursor):
             'WHERE v.active_ind = TRUE '
             'AND v.volunteer_id NOT IN (SELECT volunteer_id '
             'FROM assessment_assignment WHERE assessment_id = %s) '
+            'AND NOT EXISTS ( '
+            '  SELECT 1 FROM assessment_assignment other_aa '
+            '  JOIN assessment other_a '
+            '    ON other_a.assessment_id = other_aa.assessment_id '
+            '  WHERE other_aa.volunteer_id = v.volunteer_id '
+            '    AND other_a.assessment_dt = ( '
+            '      SELECT assessment_dt FROM assessment '
+            '      WHERE assessment_id = %s '
+            '    ) '
+            ') '
         )
         if experienced_only:
             query += 'AND ev.volunteer_id IS NOT NULL '
@@ -799,7 +819,7 @@ def enter_assignments(name: str, cursor):
 
         try:
             volunteer = prompts.select_row(cursor, query, role_code.lower(),
-                                           (assessment_id,))
+                                           (assessment_id, assessment_id))
         except prompts.Cancelled:
             # nothing picked yet: cancel the whole action
             if not added:
@@ -1171,5 +1191,9 @@ def run_action(name: str, cnx):
         except mysql.connector.Error as err:
             cnx.rollback()
             print(f'\nDatabase error: {err.msg}')
+        except Exception:
+            # Do not leave pending changes after unexpected Python errors.
+            cnx.rollback()
+            raise
     # hold the result on screen before returning to the menu
     display_support.pause()
