@@ -1,7 +1,7 @@
 /*******************************************************************************
   SCOUT ASSESSMENT - UAT (USER ACCEPTANCE TESTING) SEED DATA
   File: SCOUT_ASSESSMENT_SEED_UAT.sql
-  Compatible with: SCOUT_ASSESSMENT_DDL.sql, Version 1.3.0
+  Compatible with: SCOUT_ASSESSMENT_DDL.sql, Version 1.4.0
 
   PURPOSE
     Load a small, FICTIONAL dataset that exercises every business rule
