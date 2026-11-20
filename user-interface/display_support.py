@@ -4,100 +4,78 @@ import time
 
 
 def clear_screen():
-    '''
-    Clear the terminal window on Windows ("cls") or Mac/Linux ("clear").
-    '''
-    # clear twice to ensure clear window
-    for i in range(2):
-        subprocess.run('cls' if os.name == 'nt' else 'clear', shell=True)
+    """Clear the terminal window."""
+    command = 'cls' if os.name == 'nt' else 'clear'
+    subprocess.run(command, shell=True, check=False)
 
 
-def print_chars(message: str, speed: float=0.03):
-    '''
-    Print a message one character at a time for a typing effect.
-
-    Parameters:
-        message (string) - text to print
-        speed (float) - seconds to wait between characters
-    '''
+def print_chars(message: str, speed: float = 0.01):
+    """Print text with a typewriter effect."""
     print("\n")
+
     for char in message:
-        # flush so each character appears immediately instead of
-        # buffering
         print(char, end='', flush=True)
         time.sleep(speed)
+
     print("\n")
 
 
 def display_greeting(greeting_text: str):
-    '''
-    Clear the screen and display the greeting text inside a box
-    when the application is opened.
-
-    Parameters:
-        greeting_text (string) - text shown inside the greeting box
-    '''
+    """Display the application's welcome message."""
     clear_screen()
+
     text = greeting_text
-    # build a box sized to the text: top border, padding, text,
-    # padding, bottom border
-    welcome = "_" * (len(text) + 4) + "\n" + \
-              "|" + " " * (len(text) + 2) + "|" + "\n" + \
-              "|" + " " + text + " " + "|" + "\n" + \
-              "|" + " " * (len(text) + 2) + "|" + "\n" + \
-              "‾" * (len(text) + 4) + "\n"
-    print_chars(welcome, 0.025)
-    # brief hold so the greeting is visible before the first page loads
+
+    welcome = (
+        "_" * (len(text) + 4) + "\n"
+        + "|" + " " * (len(text) + 2) + "|" + "\n"
+        + "|" + " " + text + " " + "|" + "\n"
+        + "|" + " " * (len(text) + 2) + "|" + "\n"
+        + "‾" * (len(text) + 4) + "\n"
+    )
+
+    print_chars(welcome, 0.01)
     time.sleep(0.5)
 
 
 def display_page(page_text: str, to_upper: bool = False):
-    '''
-    Clear the screen and print the page text.
-
-    Parameters:
-        page_text (string or Window) - content to display
-        to_upper (bool) - if True, convert the text to uppercase
-    '''
+    """Clear the terminal and display a page."""
     if to_upper:
         page_text = page_text.upper()
+
     clear_screen()
     print(page_text)
 
 
 def print_table(headers: list, rows: list):
-    '''
-    Print query results as a text table with columns sized to fit
-    the longest value in each column.
-
-    Parameters:
-        headers (list) - column names
-        rows (list) - tuples of values, one per row
-    '''
+    """Display query results in an aligned text table."""
     if not rows:
         print('\n  No records found.')
         return
-    # show NULL as blank and everything else as text
-    rows = [['' if val is None else str(val) for val in row]
-            for row in rows]
-    # header labels: "camp_name" -> "Camp Name"
+
+    rows = [
+        ['N/A' if val is None else str(val) for val in row]
+        for row in rows
+    ]
+
     headers = [h.replace('_', ' ').title() for h in headers]
-    widths = [max(len(h), *(len(row[i]) for row in rows))
-              for i, h in enumerate(headers)]
+
+    widths = [
+        max(len(h), *(len(row[i]) for row in rows))
+        for i, h in enumerate(headers)
+    ]
+
     print()
     print('  '.join(h.ljust(w) for h, w in zip(headers, widths)))
     print('  '.join('-' * w for w in widths))
+
     for row in rows:
         print('  '.join(val.ljust(w) for val, w in zip(row, widths)))
-    print(f'\n({len(rows)} row{"" if len(rows) == 1 else "s"})')
+
+    count = len(rows)
+    print(f'\n({count} row{"" if count == 1 else "s"})')
 
 
 def pause(message: str = 'Press Enter to continue...'):
-    '''
-    Wait for the user to press Enter before moving on.
-
-    Parameters:
-        message (string) - prompt shown while waiting
-    '''
+    """Wait for the user to press Enter."""
     input(f'\n{message}')
-
