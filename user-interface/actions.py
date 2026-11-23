@@ -937,7 +937,7 @@ def add_volunteer(name: str, cursor):
         pref_name = first_name
     last_name = prompts.prompt_text('Last name', 45)
     email = prompts.prompt_email('Email', 254)
-    phone = prompts.prompt_text('Phone', 30)
+    phone = prompts.prompt_text('Phone (xxx-xxx-xxxx)', 30)
     council = select_council(cursor)
     # experience before joining this system (check_experience)
     experience = prompts.select_option([

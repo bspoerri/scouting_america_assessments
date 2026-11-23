@@ -53,7 +53,7 @@ CREATE TABLE volunteer (
     pref_name           VARCHAR(45)     NOT NULL DEFAULT (first_name),
     last_name           VARCHAR(45)     NOT NULL,
     email               VARCHAR(254)    NOT NULL UNIQUE,
-    phone               VARCHAR(30)     NOT NULL,
+    phone               VARCHAR(12)     NOT NULL,
     experience_baseline VARCHAR(15)     NOT NULL,
     added_dt            DATE            NOT NULL DEFAULT (CURRENT_DATE()),
     active_ind          BOOLEAN         NOT NULL DEFAULT TRUE, 
@@ -216,7 +216,6 @@ CREATE VIEW scheduled_assessments AS
 	WHERE a.status <> 'COMPLETED';
 
 
-
 -- view of engagement stats for each volunteer
 CREATE VIEW volunteer_activity AS
 	SELECT v.volunteer_id,
@@ -291,16 +290,26 @@ CREATE VIEW overdue_assessments AS
 	ORDER BY a.assessment_dt, a.assessment_id;
 
 
--- DELIMITER must come before the block comment below: the mysql
--- command-line client only recognizes DELIMITER at the start of a
--- statement, and a /* */ comment counts as the start of one
-DELIMITER $$
+/*******************************************************************************
+   Create Indexes
+********************************************************************************/
+
+-- Index on assessment date implemented because assessments are likely 
+-- to be sorted in chronological order or queried by date per requirements
+CREATE INDEX idx_assessment_assessment_dt ON assessment (assessment_dt);
+
 
 /*******************************************************************************
    Create Triggers for Advanced Constraints
 ********************************************************************************/
 
--- Only active volunteers can be assigned to an assessment.
+-- DELIMITER must come before the block comment below: the mysql
+-- command-line client only recognizes DELIMITER at the start of a
+-- statement, and a /* */ comment counts as the start of one
+DELIMITER $$
+
+-- Before assigning a volunteer to an assignment, active status must ne verified
+-- Applied to both insert and update scenarios
 CREATE TRIGGER volunteer_must_be_active_insert
 BEFORE INSERT ON assessment_assignment
 FOR EACH ROW
@@ -315,9 +324,6 @@ BEGIN
     END IF;
 END$$
 
-
--- same rule when an existing assignment is changed (volunteer swapped
--- in, role changed, or moved to another assessment)
 CREATE TRIGGER volunteer_must_be_active_update
 BEFORE UPDATE ON assessment_assignment
 FOR EACH ROW
@@ -332,12 +338,9 @@ BEGIN
     END IF;
 END$$
 
-DELIMITER ;
 
-
--- A volunteer may only be assigned the LEAD role if they are experienced.
-DELIMITER $$
-
+-- Before assigning LEAD role, verify volunteer is experienced
+-- Applied to both insert and update scenarios
 CREATE TRIGGER lead_must_be_experienced_insert
 BEFORE INSERT ON assessment_assignment
 FOR EACH ROW
@@ -351,9 +354,6 @@ BEGIN
     END IF;
 END$$
 
-
--- same rule when an existing assignment is promoted to LEAD
--- or its volunteer is swapped in
 CREATE TRIGGER lead_must_be_experienced_update
 BEFORE UPDATE ON assessment_assignment
 FOR EACH ROW
@@ -367,13 +367,9 @@ BEGIN
     END IF;
 END$$
 
-DELIMITER ;
 
-
--- There cannot be more than the required number of assessors
--- insert and update triggers
-DELIMITER $$
-
+-- Enfore restriction that number of assigned assors not exceed the number required
+-- Applied to both insert and update scenarios
 CREATE TRIGGER max_assessors_insert
 BEFORE INSERT ON assessment_assignment
 FOR EACH ROW
@@ -386,12 +382,13 @@ BEGIN
         SELECT required_assessors INTO v_required
         FROM assessment
         WHERE assessment_id = NEW.assessment_id
+        -- create locking protection on assessment table
         FOR UPDATE;
 
         SELECT COUNT(*) INTO v_filled
         FROM assessment_assignment
         WHERE assessment_id = NEW.assessment_id
-          AND role_code IN ('LEAD', 'ASSESSOR');
+        AND role_code IN ('LEAD', 'ASSESSOR');
 
         IF v_filled >= v_required THEN
             SIGNAL SQLSTATE '45000'
@@ -400,9 +397,6 @@ BEGIN
     END IF;
 END$$
 
-
--- same cap when an assignment is promoted (e.g. ALTERNATE -> ASSESSOR)
--- or moved to a different assessment
 CREATE TRIGGER max_assessors_update
 BEFORE UPDATE ON assessment_assignment
 FOR EACH ROW
@@ -433,8 +427,7 @@ BEGIN
 END$$
 
 
--- re-derive assessment status when the number of required assessors
--- changes
+-- re-derive assessment status when the number of required assessors changes
 CREATE TRIGGER required_not_below_filled
 BEFORE UPDATE ON assessment
 FOR EACH ROW
@@ -460,7 +453,7 @@ BEGIN
 END$$
 
 
--- An assessment cannot be marked COMPLETED unless it has a LEAD.
+-- Prevent update of assessment status to COMPLETED unless it has a LEAD
 CREATE TRIGGER complete_requires_lead
 BEFORE UPDATE ON assessment
 FOR EACH ROW
@@ -477,8 +470,7 @@ BEGIN
 END$$
 
 
--- a new assessment has no team yet, so it cannot start as COMPLETED
--- (closes the insert path around complete_requires_lead)
+-- Prevent creation of completed assignments
 CREATE TRIGGER no_insert_as_completed
 BEFORE INSERT ON assessment
 FOR EACH ROW
@@ -538,15 +530,11 @@ BEGIN
     END IF;
 END$$
 
-DELIMITER ;
-
 
 -- Keep assessment.status in sync with assignments:
 -- FILLED  when assigned LEAD/ASSESSOR count = required_assessors
 -- PLANNED otherwise
 -- COMPLETED assessments are never changed.
-DELIMITER $$
-
 CREATE PROCEDURE refresh_assessment_status(IN p_assessment_id INT)
 BEGIN
     UPDATE assessment a
@@ -562,12 +550,14 @@ BEGIN
       AND a.status <> 'COMPLETED';
 END$$
 
+
 CREATE TRIGGER status_after_assignment_insert
 AFTER INSERT ON assessment_assignment
 FOR EACH ROW
 BEGIN
     CALL refresh_assessment_status(NEW.assessment_id);
 END$$
+
 
 CREATE TRIGGER status_after_assignment_update
 AFTER UPDATE ON assessment_assignment
@@ -587,26 +577,6 @@ BEGIN
     CALL refresh_assessment_status(OLD.assessment_id);
 END$$
 
-DELIMITER ;
-
-
-/*******************************************************************************
-  Version 1.4.0: lead rotation and same-day assignment conflicts
-
-  Rules:
-   - Camp + program identifies a recurring annual assessment.
-   - One volunteer may lead at most three CONSECUTIVE years for that pair.
-   - All assignment roles (including ALTERNATE) reserve the entire day.
-   - Validation covers assigning/promoting a volunteer and rescheduling or
-     changing the camp/program of an existing assessment.
-
-  Assumes a freshly created database (run this full DDL before the seed).
-  For an existing v1.3 database, use the separate migration file instead.
-*******************************************************************************/
-
-CREATE INDEX idx_assessment_assessment_dt ON assessment (assessment_dt);
-
-DELIMITER $$
 
 -- Exclude the assessment currently being changed, then inspect all four
 -- possible 4-year windows that include the proposed year. If the other
@@ -641,6 +611,7 @@ BEGIN
             SET MESSAGE_TEXT = 'Lead rotation: maximum three consecutive years per camp and program';
     END IF;
 END$$
+
 
 CREATE TRIGGER lead_rotation_assignment_insert
 BEFORE INSERT ON assessment_assignment
@@ -694,6 +665,9 @@ BEGIN
     END IF;
 END$$
 
+
+-- Prevent volunteers from being assigned to multiple assessments on same day
+-- Applied on insert anf update
 CREATE TRIGGER no_date_conflict_assignment_insert
 BEFORE INSERT ON assessment_assignment
 FOR EACH ROW
@@ -729,6 +703,8 @@ BEGIN
     END IF;
 END$$
 
+
+-- Prevent assessments from being rescheduled to dates that produce scheduling conflucts
 CREATE TRIGGER no_date_conflict_assessment_update
 BEFORE UPDATE ON assessment
 FOR EACH ROW
